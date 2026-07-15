@@ -286,7 +286,9 @@ client.on("messageCreate", async (message) => {
 
     if (role.id !== allowedRole) {
 
-      console.log("Wrong game role:", role.id);
+      console.log(
+  `❌ Wrong mention: ${role.id} in channel ${message.channel.id}`
+);
 
       await message.delete().catch(() => {});
 
