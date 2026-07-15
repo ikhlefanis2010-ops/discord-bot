@@ -93,6 +93,29 @@ if (logChannel) {
     `💬 Message: ${message.content}`
   );
 }
+if (message.content === "!rank") {
+
+  if (!database.users) database.users = {};
+
+  if (!database.users[message.author.id]) {
+    database.users[message.author.id] = {
+      xp: 0,
+      level: 1
+    };
+  }
+
+  const rank = database.users[message.author.id];
+
+  message.reply(
+`🏆 **Rank**
+
+👤 User: ${message.author}
+⭐ Level: ${rank.level}
+✨ XP: ${rank.xp}/${rank.level * 100}`
+  );
+
+  saveDatabase();
+}
 
   }
 });
