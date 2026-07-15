@@ -78,16 +78,20 @@ client.on("messageCreate", async (message) => {
   const content = message.content.toLowerCase();
 
 if (badWords.some(word => {
-  const regex = new RegExp(`\\b${word}\\b`, "i");
+  const regex = new RegExp(`(?<![a-z0-9])${word}(?![a-z0-9])`, "i");
   return regex.test(content);
 })) {
 
     await message.delete();
 
-    await message.member.timeout(
-      10 * 60 * 1000,
-      "Bad words"
-    );
+   try {
+  await message.member.timeout(
+    10 * 60 * 1000,
+    "Bad words"
+  );
+} catch (err) {
+  console.log("Cannot timeout member:", err.message);
+}
 
     const logChannel = message.guild.channels.cache.get(LOG_CHANNEL_ID);
 
@@ -104,33 +108,34 @@ if (badWords.some(word => {
     return;
   }
 
+// XP System
+if (!database.users) database.users = {};
 
-  // هنا يكون !rank خارج فلتر السب
-  if (message.content === "!rank") {
+if (!database.users[message.author.id]) {
+  database.users[message.author.id] = {
+    xp: 0,
+    level: 1
+  };
+}
 
-    if (!database.users) database.users = {};
+const user = database.users[message.author.id];
 
-    if (!database.users[message.author.id]) {
-      database.users[message.author.id] = {
-        xp: 0,
-        level: 1
-      };
-    }
+// زيادة XP لكل رسالة
+user.xp += 5;
 
-    const rank = database.users[message.author.id];
+// رفع المستوى
+const neededXP = user.level * 100;
 
-    message.reply(
-`🏆 **Rank**
+if (user.xp >= neededXP) {
+  user.xp -= neededXP;
+  user.level++;
 
-👤 User: ${message.author}
-⭐ Level: ${rank.level}
-✨ XP: ${rank.xp}/${rank.level * 100}`
-    );
+  message.channel.send(
+    `🎉 ${message.author} وصل إلى **Level ${user.level}**!`
+  );
+}
 
-    saveDatabase();
-    
-    return;
-  }
+saveDatabase();
 
 });
 let statsStarted = false;
@@ -250,43 +255,45 @@ saveDatabase();
     }
   }
 });
+
+const GAME_CHANNELS = {
+  "1525137559624351855": "1525163693933858876",
+  "1525137903473397871": "1525157422069583953",
+  "1525138258760040478": "1525163596726796408",
+  "1525165141824376913": "1525166182074683423",
+  "1525165616485371944": "1525166048758861975",
+  "1525165857582354574": "1525166113602666670"
+};
+
 client.on("messageCreate", async (message) => {
-  console.log("MESSAGE:", message.content);
   if (message.author.bot) return;
 
-  // !clear
-  if (message.content.startsWith("!clear")) {
+  const allowedRole = GAME_CHANNELS[message.channel.id];
 
-    if (!message.member.permissions.has("ManageMessages")) {
-      return message.reply("❌ ليس لديك صلاحية.");
+  console.log("CHANNEL ID:", message.channel.id);
+  console.log("ALLOWED ROLE:", allowedRole);
+  console.log("MENTIONED ROLES:", [...message.mentions.roles.keys()]);
+
+  if (!allowedRole) return;
+
+  for (const role of message.mentions.roles.values()) {
+
+    if (role.id !== allowedRole) {
+
+      console.log("WRONG ROLE:", role.id);
+
+      await message.delete().catch(() => {});
+
+      const warn = await message.channel.send(
+        `❌ ${message.author} هذا الشات مخصص لهذه اللعبة فقط.`
+      );
+
+      setTimeout(() => {
+        warn.delete().catch(() => {});
+      }, 5000);
+
+      break;
     }
-
-    const args = message.content.split(" ");
-    const amount = parseInt(args[1]);
-
-    if (!amount || amount < 1 || amount > 100) {
-      return message.reply("❌ اكتب رقمًا بين 1 و100.");
-    }
-
-    await message.channel.bulkDelete(amount).catch(console.error);
-
-    const reply = await message.channel.send(`🗑️ تم حذف ${amount} رسالة.`);
-    setTimeout(() => reply.delete().catch(() => {}), 3000);
-
-    return;
-  }
-
-  // !ping
-  if (message.content === "!ping") {
-    const msg = await message.reply("🏓 Pinging...");
-
-    const latency = msg.createdTimestamp - message.createdTimestamp;
-
-    await msg.edit(
-`🏓 **Pong!**
-⚡ Bot: ${latency}ms
-🌐 API: ${client.ws.ping}ms`
-    );
   }
 });
 
