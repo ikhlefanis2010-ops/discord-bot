@@ -104,34 +104,6 @@ if (badWords.some(word => {
     return;
   }
 
-
-  // هنا يكون !rank خارج فلتر السب
-  if (message.content === "!rank") {
-
-    if (!database.users) database.users = {};
-
-    if (!database.users[message.author.id]) {
-      database.users[message.author.id] = {
-        xp: 0,
-        level: 1
-      };
-    }
-
-    const rank = database.users[message.author.id];
-
-    message.reply(
-`🏆 **Rank**
-
-👤 User: ${message.author}
-⭐ Level: ${rank.level}
-✨ XP: ${rank.xp}/${rank.level * 100}`
-    );
-
-    saveDatabase();
-    
-    return;
-  }
-
 });
 let statsStarted = false;
 client.once("ready", async () => {
@@ -305,4 +277,105 @@ client.on("messageCreate", async (message) => {
   }
 });
 console.log("GAME MENTION SYSTEM LOADED");
+client.on("voiceStateUpdate", (oldState, newState) => {
+
+  // دخل فويس
+  if (!oldState.channelId && newState.channelId) {
+
+    if (!database.voiceTime) database.voiceTime = {};
+
+    database.voiceTime[newState.member.id] = {
+      joinTime: Date.now()
+    };
+
+    saveDatabase();
+  }
+
+
+  // خرج من الفويس
+  if (oldState.channelId && !newState.channelId) {
+
+    const userId = oldState.member.id;
+
+    if (!database.voiceTime) database.voiceTime = {};
+
+    if (database.voiceTime[userId]) {
+
+      const time =
+        Date.now() - database.voiceTime[userId].joinTime;
+
+      const minutes = Math.floor(time / 60000);
+
+      if (!database.users) database.users = {};
+      if (!database.users[userId]) {
+        database.users[userId] = {};
+      }
+
+      if (!database.users[userId].voiceMinutes) {
+        database.users[userId].voiceMinutes = 0;
+      }
+
+      database.users[userId].voiceMinutes += minutes;
+
+      delete database.voiceTime[userId];
+
+      saveDatabase();
+    }
+  }
+
+});
+
+client.on("messageCreate", async (message) => {
+
+  if (message.author.bot) return;
+
+  if (message.content === "!rank") {  
+
+  if (!database.users) database.users = {};
+
+  if (!database.users[message.author.id]) {
+    database.users[message.author.id] = {
+      voiceMinutes: 0
+    };
+  }
+
+  const minutes = database.users[message.author.id].voiceMinutes || 0;
+
+  let rank;
+  let next;
+
+  if (minutes < 100) {
+    rank = "🥉 Bronze";
+    next = 100;
+  } 
+  else if (minutes < 300) {
+    rank = "🥈 Silver";
+    next = 300;
+  }
+  else if (minutes < 600) {
+    rank = "🥇 Gold";
+    next = 600;
+  }
+  else if (minutes < 1000) {
+    rank = "💎 Diamond";
+    next = 1000;
+  }
+  else {
+    rank = "👑 Immortal";
+    next = "MAX";
+  }
+
+  message.reply(
+`🏆 **Rank**
+
+👤 User: ${message.author}
+
+🎧 Voice Time: **${minutes} minutes**
+
+⭐ Rank: **${rank}**
+
+📈 Next Rank: **${next === "MAX" ? "MAX" : next + " minutes"}**`
+  );
+}
+});
 client.login(process.env.TOKEN);
