@@ -75,7 +75,12 @@ const LOG_CHANNEL_ID = "1525385648964632637";
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
-  if (badWords.some(word => message.content.toLowerCase().includes(word))) {
+  const content = message.content.toLowerCase();
+
+if (badWords.some(word => {
+  const regex = new RegExp(`\\b${word}\\b`, "i");
+  return regex.test(content);
+})) {
 
     await message.delete();
 
