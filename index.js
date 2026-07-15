@@ -26,6 +26,7 @@ const client = new Client({
 
 const GUILD_ID = "1525098538718072924";
 const CHANNEL_ID = "1525116780979294250";
+const STATS_CATEGORY_ID = "1526330699517526158";
 
 client.once("ready", async () => {
     console.log(`Logged in as ${client.user.tag}`);
@@ -82,47 +83,51 @@ client.on("messageCreate", async (message) => {
       10 * 60 * 1000,
       "Bad words"
     );
+
     const logChannel = message.guild.channels.cache.get(LOG_CHANNEL_ID);
 
-if (logChannel) {
-  logChannel.send(
-    `🛡️ **Moderation Log**\n\n` +
-    `👤 User: ${message.author}\n` +
-    `⚠️ Reason: Bad words\n` +
-    `⏱️ Timeout: 10 minutes\n` +
-    `💬 Message: ${message.content}`
-  );
-}
-if (message.content === "!rank") {
+    if (logChannel) {
+      logChannel.send(
+        `🛡️ **Moderation Log**\n\n` +
+        `👤 User: ${message.author}\n` +
+        `⚠️ Reason: Bad words\n` +
+        `⏱️ Timeout: 10 minutes\n` +
+        `💬 Message: ${message.content}`
+      );
+    }
 
-  if (!database.users) database.users = {};
-
-  if (!database.users[message.author.id]) {
-    database.users[message.author.id] = {
-      xp: 0,
-      level: 1
-    };
+    return;
   }
 
-  const rank = database.users[message.author.id];
 
-  message.reply(
+  // هنا يكون !rank خارج فلتر السب
+  if (message.content === "!rank") {
+
+    if (!database.users) database.users = {};
+
+    if (!database.users[message.author.id]) {
+      database.users[message.author.id] = {
+        xp: 0,
+        level: 1
+      };
+    }
+
+    const rank = database.users[message.author.id];
+
+    message.reply(
 `🏆 **Rank**
 
 👤 User: ${message.author}
 ⭐ Level: ${rank.level}
 ✨ XP: ${rank.xp}/${rank.level * 100}`
-  );
+    );
 
-  saveDatabase();
-}
-
+    saveDatabase();
   }
+
 });
-const STATS_CATEGORY_ID = "1526330699517526158";
-
-client.once("clientReady", async () => {
-
+let statsStarted = false;
+client.once("ready", async () => {
   const guild = client.guilds.cache.get(GUILD_ID);
   if (!guild) return;
 
@@ -181,6 +186,7 @@ client.once("clientReady", async () => {
   };
 
 
+  
   updateStats();
 
   setInterval(updateStats, 60000);
@@ -210,6 +216,8 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
     if (member.user.bot) return;
 
     // منع التكرار
+    if (!database.sentUsers) database.sentUsers = [];
+    
     if (database.sentUsers.includes(member.id)) return;
 
 database.sentUsers.push(member.id);
