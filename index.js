@@ -128,6 +128,8 @@ if (badWords.some(word => {
     );
 
     saveDatabase();
+    
+    return;
   }
 
 });
