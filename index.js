@@ -304,4 +304,5 @@ client.on("messageCreate", async (message) => {
     }
   }
 });
+console.log("GAME MENTION SYSTEM LOADED");
 client.login(process.env.TOKEN);
