@@ -251,6 +251,7 @@ saveDatabase();
   }
 });
 client.on("messageCreate", async (message) => {
+  console.log("MESSAGE:", message.content);
   if (message.author.bot) return;
 
   if (message.content === "!ping") {
