@@ -5,7 +5,9 @@
   "users": {
     "1411363617592447058": {
       "xp": 0,
-      "level": 1
+      "level": 1,
+      "voiceMinutes": 1
     }
-  }
+  },
+  "voiceTime": {}
 }

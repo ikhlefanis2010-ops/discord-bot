@@ -278,6 +278,9 @@ client.on("messageCreate", async (message) => {
 });
 console.log("GAME MENTION SYSTEM LOADED");
 client.on("voiceStateUpdate", (oldState, newState) => {
+  console.log("VOICE EVENT");
+console.log("OLD:", oldState.channelId);
+console.log("NEW:", newState.channelId);
 
   // دخل فويس
   if (!oldState.channelId && newState.channelId) {
@@ -287,6 +290,7 @@ client.on("voiceStateUpdate", (oldState, newState) => {
     database.voiceTime[newState.member.id] = {
       joinTime: Date.now()
     };
+    console.log("Saved join time for:", newState.member.user.tag);
 
     saveDatabase();
   }
@@ -305,6 +309,7 @@ client.on("voiceStateUpdate", (oldState, newState) => {
         Date.now() - database.voiceTime[userId].joinTime;
 
       const minutes = Math.floor(time / 60000);
+      console.log("Minutes calculated:", minutes);
 
       if (!database.users) database.users = {};
       if (!database.users[userId]) {
@@ -316,6 +321,7 @@ client.on("voiceStateUpdate", (oldState, newState) => {
       }
 
       database.users[userId].voiceMinutes += minutes;
+      console.log("Total voice minutes:", database.users[userId].voiceMinutes);
 
       delete database.voiceTime[userId];
 
